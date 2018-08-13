@@ -27,10 +27,8 @@ timelog <- time_raw %>%
   select(-description) %>%
   filter(tolower(task) != 'sleep')
 
-## check and see if each row can be identifed by the start time
 ## wasn't successful trying to use standard deviation / quartiles to
-## automatically determine trip end points.  decided to do it manually.
-
+## automatically determine trip end points.  decided to do it manually:
 timelog <- timelog %>%
   mutate(trip_day = case_when(
      end_time <= as.POSIXct("2018-07-15 00:59:04", tz = "America/Los_Angeles") ~ 1
@@ -50,31 +48,20 @@ timelog_ranges <- timelog %>%
             ,trip_end = max(end_time)
             )
 
-## tons of features in the tesla data, removing some
+## tons of features in the tesla data, focusing on only what I need
 tesla_worked <- tesla_raw %>%
   select(Date, latitude, longitude, battery_level, outside_tempF, inside_tempF, charging_state
          ,fast_charger_type, state, shift_state, speed, battery_range, charge_rate, elevation, heading
-         ,odometer, ideal_battery_range, power)
-  #select(-vehicle_id, -display_name, -color, -backseat_token, -vin, -backseat_token_updated_at, -id, -id_s, -vehicle_name, -odometerF)
-
-## cross join the time start/end times against the tesla dataset
-## and filter out data points that aren't part of transit times
-## during the road trip.
-
-tesla_cross <- tesla_worked %>%
-  crossing(timelog_ranges) %>% ## cross join to timelog ranges, not ideal but quick at this size
-  filter(Date >= trip_start & Date <= trip_end) %>% ## filter out records that aren't between timelog ranges
-  select(-trip_start, -trip_end) %>%
-  mutate(odometer = na.locf(odometer)) %>% ##some readings missing, sliding results forward
-  mutate(odo_trip_delta = na.fill(if_else(trip_day == lag(trip_day), odometer - lag(odometer,1) , 0),0) ) %>% ## calc change in odometer for trip days
-  mutate(odo_overall_delta = na.fill(odometer - lag(odometer,1),0) ) ## calc change in overall odometer
+         ,odometer, ideal_battery_range, power) %>%
+  ## nulls exist in a few measure, using LOCF to roll forward previous observations
+  mutate(elevation = na.locf(elevation, na.rm = FALSE)
+         ,battery_level = na.locf(battery_level, na.rm = FALSE)
+         )
 
 write_csv(tesla_worked, '/Users/kazzazmk/WorkDocs/Repo/kzteslaroadtrip201807/data/201807 tesla tracking.csv')
 
-tesla_worked %>% mutate(date_part = as.Date(Date)) %>% filter(date_part > as.Date("2018-07-13")) %>% group_by(date_part) %>% summarize(n())
-
-#tesla_part <- tesla_worked %>% sample(100) %>% rowwise() %>% mutate(revgeoresult = revgeo(longitude = longitude, latitude = latitude))
-
+## want to create a dataset dedicated to supercharging.
+## able to rely on the 'fast_charger_type' attribute.
 tesla_geo_charging <- tesla_raw %>% filter(fast_charger_type == 'Tesla') %>% select() %>% group_by(latitude, longitude) %>% summarize(count = n(), start_time = min(Date), end_time = max(Date)) %>% filter(count > 1) %>% ungroup(.) %>% mutate(duration = end_time - start_time)
 
 tesla_geo_charging <- tesla_raw %>% 
