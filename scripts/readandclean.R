@@ -85,3 +85,6 @@ tesla_geo_charging <- tesla_raw %>%
   arrange(start_time)
 
 write_csv(tesla_geo_charging, '/Users/kazzazmk/WorkDocs/Repo/kzteslaroadtrip201807/data/201807 tesla geo reverse results.csv')
+
+tesla_raw %>% filter(Date > as.Date("2018-07-14") & Date < as.Date("2018-07-26")) %>% filter(is.na(battery_level)) %>% summarise(n())
+tesla_raw %>% filter(Date > as.Date("2018-07-14") & Date < as.Date("2018-07-26")) %>% summarise(n())
