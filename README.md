@@ -22,7 +22,7 @@
 <!-- /TOC -->
 
 # kzteslaroadtrip201807
-A 3.2k mile road trip covering the Western US during July 2018 in a Tesla Model 3.
+A 3.2k mile road trip covering the Western US during July 2018 in a Tesla Model 3.  This GitHub README page focuses on my data analysis of the trip.  For my other silly antics, check out [my related WordPress blog](https://kzroadtrip.wordpress.com/).
 
 ## Previous analysis
 Back in January 2018, I drove with my brother from Chicago to Cupertino in his Tesla Model S P100D.  Here's a [link](https://github.com/kzbigboss/kzteslaroadtrip2018) to the previous write up.  Knowing how fun it was to road trip in a Tesla, I figured I'd be doing it again some time.
