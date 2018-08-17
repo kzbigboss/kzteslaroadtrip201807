@@ -1,6 +1,7 @@
 library(tidyverse)
 library(zoo)
 library(revgeo)
+library(knitr)
 
 ## original data files
 time_raw <- read_csv('/Users/kazzazmk/WorkDocs/Repo/kzteslaroadtrip201807/data/201807 time tracking.csv')
@@ -66,12 +67,14 @@ tesla_geo_charging <- tesla_raw %>% filter(fast_charger_type == 'Tesla') %>% sel
 
 tesla_geo_charging <- tesla_raw %>% 
   filter(fast_charger_type == 'Tesla') %>% 
-  select(latitude, longitude, Date, charge_current_request, charge_miles_added_rated, charge_rate, charger_voltage, charge_energy_added) %>%
+  select(latitude, longitude, Date, charge_current_request, charge_miles_added_rated, charge_rate, charger_voltage, charge_energy_added, battery_level) %>%
   filter(charge_rate > 0) %>%
   group_by(latitude, longitude) %>%
-  summarize(count = n()
+  summarize(record_count = n()
             ,start_time = min(Date)
             ,end_time = max(Date)
+            ,start_battery = min(battery_level)
+            ,end_battery = max(battery_level)
             ,avg_amp = mean(charge_current_request)
             ,miles_added = max(charge_miles_added_rated)
             ,avg_charging_mph = mean(charge_rate)
@@ -84,7 +87,9 @@ tesla_geo_charging <- tesla_raw %>%
   separate(revgeoresult, sep = ',', into = c("street","city","state","zip","country")) %>%
   arrange(start_time)
 
+tesla_geo_charging <- tesla_geo_charging %>% ungroup(.) %>% mutate(rownum = row_number()) %>% filter(rownum != 1) %>% mutate(duration = duration / 60) %>% mutate(rownum = row_number())
+tesla_geo_reddit <- tesla_geo_charging %>% mutate(duration_hrs = round(duration, 2)) %>% rename(chargeno = rownum) %>% select(chargeno, city, state, duration_hrs, start_battery, end_battery, avg_amp, avg_charging_mph, avg_voltage, energy_added, miles_added)
+
 write_csv(tesla_geo_charging, '/Users/kazzazmk/WorkDocs/Repo/kzteslaroadtrip201807/data/201807 tesla geo reverse results.csv')
 
-tesla_raw %>% filter(Date > as.Date("2018-07-14") & Date < as.Date("2018-07-26")) %>% filter(is.na(battery_level)) %>% summarise(n())
-tesla_raw %>% filter(Date > as.Date("2018-07-14") & Date < as.Date("2018-07-26")) %>% summarise(n())
+write_csv(tesla_geo_reddit, '/Users/kazzazmk/WorkDocs/Repo/kzteslaroadtrip201807/data/201807 tesla geo reverse results with battery.csv')
